@@ -1,41 +1,45 @@
  #!/usr/bin/python3
-"""Script thatgets user data (Todo list) from API
-and then export the result to csv file. """
+"""Script that gets user data (Todo list) from API
+and then export the result to a JSON file."""
 
-import csv
+import json
 import requests
-import sys
 
 
 def main():
-    """main function"""
-    user_id = int(sys.argv[1])
+    """Main function"""
+
+    # Fetch all todos
     todo_url = 'https://jsonplaceholder.typicode.com/todos'
-    user_url = 'https://jsonplaceholder.typicode.com/users/{}'.format(user_id)
+    todos = requests.get(todo_url).json()
 
-    file_content = []
+    # Fetch all users in one request
+    users_url = 'https://jsonplaceholder.typicode.com/users'
+    users = requests.get(users_url).json()
 
-    response = requests.get(todo_url)
-    user_name = requests.get(user_url).json().get('username')
+    # Create a dictionary of userId to username
+    user_dict = {user["id"]: user["username"] for user in users}
 
-    for todo in response.json():
-        if todo.get('userId') == user_id:
-            file_content.append(
-                [str(user_id),
-                 user_name,
-                 todo.get('completed'),
-                 "{}".format(todo.get('title'))])
+    output = {}
 
-    print(file_content)
-    file_name = "{}.csv".format(user_id)
-    with open(file_name, 'w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
-        for row in file_content:
-            for item in row:
-                str(item)
-            csv_writer.writerow(row)
-        print('file written successfully')
+    for todo in todos:
+        user_id = todo['userId']
+        username = user_dict[user_id]  # Get username from pre-fetched data
+
+        if user_id not in output:
+            output[user_id] = []
+
+        output[user_id].append({
+            "username": username,
+            "task": todo["title"],
+            "completed": todo["completed"]
+        })
+
+    # Save the output to a JSON file
+    with open("todo_all_employees.json", "w") as file:
+        json.dump(output, file, indent=4)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
+
