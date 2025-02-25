@@ -1,50 +1,52 @@
 #!/usr/bin/python3
 """
-This module fetches all employees' TODO list data from a REST API and
-exports the data in JSON format.
+Python script that exports data in the JSON format
 """
-
 import json
 import requests
 
 
-def get_all_employees_todo_data():
-    """Fetch all employee tasks and export them in JSON format."""
-    users_url = "https://jsonplaceholder.typicode.com/users"
-    todos_url = "https://jsonplaceholder.typicode.com/todos"
+def get_all_users():
+    """
+    Get the list of all users
+    """
+    url = "https://jsonplaceholder.typicode.com/users"
+    response = requests.get(url)
+    return response.json()
 
-    users_response = requests.get(users_url)
-    if users_response.status_code != 200:
-        print("Error: Unable to fetch users data")
-        return
 
-    users = users_response.json()
+def get_user_todos(user_id):
+    """
+    Get the TODO list for a given user ID
+    """
+    url = "https://jsonplaceholder.typicode.com/todos"
+    response = requests.get(url, params={"userId": user_id})
+    return response.json()
 
-    todos_response = requests.get(todos_url)
-    if todos_response.status_code != 200:
-        print("Error: Unable to fetch todos data")
-        return
 
-    todos = todos_response.json()
-
-    tasks_by_user = {}
-
-    for user in users:
-        user_id = user['id']
-        username = user['username']
-
-        tasks_by_user[user_id] = [
+def export_all_todos_to_json(users):
+    """
+    Export all users' TODO lists to a JSON file
+    """
+    data = {
+        user["id"]: [
             {
-                "username": username,
-                "task": task["title"],
-                "completed": task["completed"]
-            }
-            for task in todos if task["userId"] == user_id
-        ]
+                "task": todo["title"],
+                "completed": todo["completed"],
+                "username": user["username"]
+            } for todo in get_user_todos(user["id"])
+        ] for user in users
+    }
+    with open("todo_all_employees.json", "w") as jsonfile:
+        json.dump(data, jsonfile)
 
-    filename = "todo_all_employees.json"
-    with open(filename, "w", encoding="utf-8") as file:
-        json.dump(tasks_by_user, file, indent=4)
+
+def main():
+    """
+    Main function to fetch users and their TODO lists, then export to JSON
+    """
+    users = get_all_users()
+    export_all_todos_to_json(users)
 
 if __name__ == "__main__":
-    get_all_employees_todo_data()
+    main()

@@ -1,74 +1,56 @@
 #!/usr/bin/python3
 """
-Script to fetch an employee's TODO list progress using a REST API and
-export the data to a CSV file.
+Module to fetch user information and export TODO list to a CSV file
 """
-
 import csv
 import requests
-import sys
+from sys import argv
 
 
-def fetch_todo_progress(employee_id):
-    """Fetches and displays the TODO list progress of an employee."""
-    base_url = "https://jsonplaceholder.typicode.com"
+def get_employee_info(employee_id):
+    """
+    Get employee information by employee ID
+    """
+    url = f'https://jsonplaceholder.typicode.com/users/{employee_id}'
+    response = requests.get(url)
+    return response.json()
 
-    # Validate employee_id
-    try:
-        employee_id = int(employee_id)
-        if employee_id <= 0:
-            raise ValueError
-    except ValueError:
-        print("Error: Employee ID must be a positive integer.")
-        return
 
-    # Fetch employee data
-    user_response = requests.get(f"{base_url}/users/{employee_id}")
-    if user_response.status_code != 200:
-        print("Employee not found.")
-        return
+def get_employee_todos(employee_id):
+    """
+    Get the TODO list of the employee by employee ID
+    """
+    url = f'https://jsonplaceholder.typicode.com/users/{employee_id}/todos'
+    response = requests.get(url)
+    return response.json()
 
-    user_data = user_response.json()
-    employee_name = user_data.get("name")
 
-    # Fetch employee's tasks
-    todos_response = requests.get(
-        f"{base_url}/todos", params={"userId": employee_id}
-    )
-    if todos_response.status_code != 200:
-        print("Could not retrieve TODO list.")
-        return
+def export_to_csv(employee_id, username, todos):
+    """
+    Export TODO list to a CSV file
+    """
+    filename = f'{employee_id}.csv'
+    with open(filename, mode='w') as file:
+        file_writer = csv.writer(file, delimiter=',', quoting=csv.QUOTE_ALL)
+        for todo in todos:
+            rowData = [employee_id, username, todo['completed'], todo['title']]
+            file_writer.writerow(rowData)
 
-    todos = todos_response.json()
-    total_tasks = len(todos)
-    completed_tasks = [task for task in todos if task.get("completed")]
-    num_completed_tasks = len(completed_tasks)
 
-    # Construct the progress string in two parts to meet PEP8 line length
-    progress_str = (
-        f"Employee {employee_name} is done with tasks("
-        f"{num_completed_tasks}/{total_tasks}):"
-    )
-    print(progress_str)
+def main(employee_id):
+    """
+    Main function to fetch user info and TODO list, then export to CSV
+    """
+    user = get_employee_info(employee_id)
+    username = user.get("username")
 
-    for task in completed_tasks:
-        print(f"\t {task.get('title')}")
+    todos = get_employee_todos(employee_id)
 
-    # Export data to CSV file
-    csv_filename = f"{employee_id}.csv"
-    with open(csv_filename, mode='w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
-        for task in todos:
-            csv_writer.writerow([
-                employee_id, user_data.get("username"),
-                task.get("completed"), task.get("title")
-            ])
-    print(f"Data exported to {csv_filename}")
+    export_to_csv(employee_id, username, todos)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: ./employee_todo_progress.py <employee_id>")
-        sys.exit(1)
-
-    fetch_todo_progress(sys.argv[1])
+    if len(argv) > 1:
+        main(argv[1])
+    else:
+        print("Usage: ./1-export_to_CSV.py <employee_id>")
