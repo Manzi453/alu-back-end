@@ -1,52 +1,23 @@
 #!/usr/bin/python3
-"""
-Python script that returns TODO list progress for a given employee ID
-"""
+
+"""gather data from an api"""
 import requests
-from sys import argv
+import sys
 
+if __name__ == '__main__':
+    """gather data from an api"""
+    response_todos = requests.get(
+        "https://jsonplaceholder.typicode.com/user/" + sys.argv[1] + "/todos"
+    )
+    data = response_todos.json()
+    completed_tasks = []
+    for i in data:
+        if i['completed']:
+            completed_tasks.append(i['title'])
 
-def get_employee_info(employee_id):
-    """
-    Get employee information by employee ID
-    """
-    url = f'https://jsonplaceholder.typicode.com/users/{employee_id}/'
-    response = requests.get(url)
-    return response.json()
-
-
-def get_employee_todos(employee_id):
-    """
-    Get the TODO list of the employee by employee ID
-    """
-    url = f'https://jsonplaceholder.typicode.com/users/{employee_id}/todos'
-    response = requests.get(url)
-    return response.json()
-
-
-def main(employee_id):
-    """
-    Main function to fetch and display the TODO list progress of the employee
-    """
-    employee = get_employee_info(employee_id)
-    employee_name = employee.get("name")
-
-    emp_todos = get_employee_todos(employee_id)
-    tasks = {todo.get("title"): todo.get("completed") for todo in emp_todos}
-
-    total_tasks = len(tasks)
-    completed_tasks = [completed for completed in tasks.values() if completed]
-    completed_tasks_count = len(completed_tasks)
-
-    print(f"Employee {employee_name} is done with tasks"
-          f"({completed_tasks_count}/{total_tasks}):")
-    for title, completed in tasks.items():
-        if completed:
-            print(f"\t {title}")
-
-
-if __name__ == "__main__":
-    if len(argv) > 1:
-        main(argv[1])
-    else:
-        print("Usage: ./0-gather_data_from_an_API.py <employee_id>")
+    user = requests.get(
+        "https://jsonplaceholder.typicode.com/users/" + sys.argv[1]
+    ).json()
+    print("Employee {} is done with tasks({}/{}):".
+          format(user["name"], len(completed_tasks), len(data)))
+    [print("\t " + task) for task in completed_tasks]
