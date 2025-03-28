@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/usr/bin/python3
 """
 Module to fetch user information and export TODO list to a JSON file
@@ -58,3 +59,33 @@ if __name__ == "__main__":
         main(sys.argv[1])
     else:
         print("Usage: ./2-export_to_JSON.py <employee_id>")
+=======
+#!/usr/bin/python3
+"""
+Uses https://jsonplaceholder.typicode.com along with an employee ID to
+return information about the employee's todo list progress
+"""
+
+import json
+import requests
+from sys import argv
+
+if __name__ == '__main__':
+    userId = argv[1]
+    user = requests.get("https://jsonplaceholder.typicode.com/users/{}".
+                        format(userId), verify=False).json()
+    todo = requests.get("https://jsonplaceholder.typicode.com/todos?userId={}".
+                        format(userId), verify=False).json()
+    username = user.get('username')
+    tasks = []
+    for task in todo:
+        task_dict = {}
+        task_dict["task"] = task.get('title')
+        task_dict["completed"] = task.get('completed')
+        task_dict["username"] = username
+        tasks.append(task_dict)
+    jsonobj = {}
+    jsonobj[userId] = tasks
+    with open("{}.json".format(userId), 'w') as jsonfile:
+        json.dump(jsonobj, jsonfile)
+>>>>>>> 2e0e743a0dd2aefc721d02f9ae7d2583cdc33a6b
